@@ -37,3 +37,16 @@ Promise.resolve(f).then((v) => {
   v();
   console.log('setTimeout then:', v);
 });
+let p;
+const func = async () => {
+  p = await new Promise((resolve, reject) => {
+    resolve(1);
+  }).finally(() => {
+    console.log('finally');
+    return 'finally return';
+  });
+
+  console.log('p:', p);
+};
+
+func();
