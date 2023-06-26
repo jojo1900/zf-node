@@ -21,7 +21,7 @@ export class MyPromise {
         this.value = value;
         this.status = 'fulfilled';
         this.onResolveFuncs.forEach((fn) => {
-          fn(value);
+          fn.bind(this)(value);
         });
       }
     };
@@ -31,7 +31,7 @@ export class MyPromise {
         this.reason = reason;
         this.status = 'rejected';
         this.onRejectFuncs.forEach((fn) => {
-          fn(reason);
+          fn.bind(this)(reason);
         });
       }
     };
@@ -46,24 +46,91 @@ export class MyPromise {
     // 并不是在调用then时触发，是在调用then时收集，在executor执行完之后,在resolve/reject执行的时候触发
     this.onResolveFuncs.push(onResolve);
     onRejected && this.onRejectFuncs.push(onRejected);
+    return this;
+  }
+  static all(list: any[]) {
+    const p = new MyPromise((resolve, reject) => {
+      const results: any[] = [];
+      for (let index = 0; index < list.length; index++) {
+        const promise = list[index];
+        if (promise instanceof MyPromise) {
+          promise.then(
+            (value: any) => {
+              results.push(value);
+              if (results.length === list.length) {
+                resolve(results);
+              }
+            },
+            () => {
+              reject();
+            }
+          );
+        } else {
+          results.push(promise);
+          if (results.length === list.length) {
+            resolve(results);
+          }
+        }
+      }
+    });
+    return p;
+  }
+  static race() {}
+  static resolve(value: any[]) {
+    if (value instanceof MyPromise) {
+      return value;
+    } else {
+      return new Promise((resolve) => {
+        resolve(value);
+      });
+    }
   }
 }
 //
-const p = new MyPromise((resolve, reject) => {
+// const p = new MyPromise((resolve, reject) => {
+//   setTimeout(() => {
+//     const random = Math.random();
+//     if (random > 0) {
+//       resolve('success:' + random);
+//     } else {
+//       reject('fail' + random);
+//     }
+//   }, 1000);
+// });
+// const pp = p.then(
+//   (value) => {
+//     console.log('resolve value: ', value);
+//   },
+//   (reason) => {
+//     console.log('rejected reason:', reason);
+//   }
+// );
+
+// pp.then((value) => {
+//   console.log('pp then2:', value);
+// });
+
+const p1 = new MyPromise((resolve, reject) => {
   setTimeout(() => {
-    const random = Math.random();
-    if (random > 0.5) {
-      resolve('success:' + random);
-    } else {
-      reject('fail' + random);
-    }
-  }, 1000);
+    console.log('111');
+    resolve(1);
+  }, 100);
 });
-p.then(
-  (value) => {
-    console.log('resolve value: ', value);
-  },
-  (reason) => {
-    console.log('rejected reason:', reason);
-  }
-);
+
+const p2 = new MyPromise((resolve, reject) => {
+  setTimeout(() => {
+    console.log('222');
+    resolve(2);
+  }, 200);
+});
+
+const p3 = new MyPromise((resolve, reject) => {
+  setTimeout(() => {
+    console.log('333');
+    resolve(3);
+  }, 300);
+});
+
+MyPromise.all([p1, p2, p3]).then((value) => {
+  console.log('all value:', value);
+});
