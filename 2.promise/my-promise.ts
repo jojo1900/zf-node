@@ -142,7 +142,7 @@ export class MyPromise {
       });
     }
   }
-  static all(promises: MyPromise[]) {}
+  static all(promises: any[]) {}
 }
 //
 
